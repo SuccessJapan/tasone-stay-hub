@@ -1,6 +1,15 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-21WXTDR66F"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-21WXTDR66F');
+</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>宿泊施設一覧｜ご予約はこちら</title>
@@ -313,6 +322,7 @@ const OTA_LABELS = [
 ];
 
 let allRows = [];
+let lastFiltered = [];
 let activeArea = "すべて";
 let activeType = "すべて";
 let activeConcept = "すべて";
@@ -442,6 +452,9 @@ function buildFilters(){
       if(kind === "area") activeArea = val;
       if(kind === "type") activeType = val;
       if(kind === "concept") activeConcept = val;
+      if(typeof gtag === "function"){
+        gtag('event', 'filter_select', { filter_type: kind, filter_value: val });
+      }
       buildFilters();
       render();
     });
@@ -460,6 +473,7 @@ function matches(r){
 
 function render(){
   const filtered = allRows.filter(matches);
+  lastFiltered = filtered;
   document.getElementById("countLine").textContent = `${filtered.length}件の施設`;
 
   const list = document.getElementById("list");
@@ -474,7 +488,7 @@ function render(){
     const tags = [r.area, ...r.typeTags, ...r.conceptTags].filter(Boolean).map(t => `<span class="tag">${t}</span>`).join("");
     const buttons = OTA_LABELS
       .filter(o => r[o.key])
-      .map(o => `<a class="book-btn ${o.cls}" href="${r[o.key]}" target="_blank" rel="noopener">${o.label}<span class="arrow">›</span></a>`)
+      .map(o => `<a class="book-btn ${o.cls}" href="${r[o.key]}" target="_blank" rel="noopener" data-track-ota="${escapeHtml(o.label)}" data-track-property="${escapeHtml(r.name)}">${o.label}<span class="arrow">›</span></a>`)
       .join("");
 
     return `
@@ -505,12 +519,35 @@ function toggleCard(i){
   if(!isOpen){
     card.classList.add("open");
     body.style.maxHeight = body.scrollHeight + "px";
+    const row = lastFiltered[i];
+    if(row && typeof gtag === "function"){
+      gtag('event', 'view_property', { property_name: row.name });
+    }
   }
 }
 
+// 予約ボタン（Airbnb・Booking.com等）のクリックを計測
+document.addEventListener("click", (e) => {
+  const link = e.target.closest("[data-track-ota]");
+  if(link && typeof gtag === "function"){
+    gtag('event', 'booking_click', {
+      ota: link.dataset.trackOta,
+      property_name: link.dataset.trackProperty
+    });
+  }
+});
+
+// 検索は入力が落ち着いてから計測（1文字ごとの過剰な記録を避ける）
+let searchTrackTimer = null;
 document.getElementById("searchInput").addEventListener("input", (e) => {
   searchTerm = e.target.value;
   render();
+  clearTimeout(searchTrackTimer);
+  searchTrackTimer = setTimeout(() => {
+    if(searchTerm.trim() && typeof gtag === "function"){
+      gtag('event', 'search', { search_term: searchTerm.trim() });
+    }
+  }, 800);
 });
 
 loadData();
