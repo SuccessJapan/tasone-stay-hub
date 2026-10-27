@@ -1460,8 +1460,8 @@
 <nav class="jump-nav" aria-label="ページ内メニュー">
   <ul>
     <li><a href="#scene" style="--c:var(--yellow)"><span class="n" style="color:var(--ink)">★</span>推し活シーン</a></li>
-    <li><a href="#category" style="--c:var(--pink)"><span class="n">1</span>カテゴリーで選ぶ</a></li>
-    <li><a href="#venue" style="--c:var(--purple)"><span class="n">2</span>イベント会場から選ぶ</a></li>
+    <li><a href="#venue" style="--c:var(--purple)"><span class="n">1</span>イベント会場から選ぶ</a></li>
+    <li><a href="#category" style="--c:var(--pink)"><span class="n">2</span>カテゴリーで選ぶ</a></li>
     <li><a href="#all" style="--c:var(--mint)"><span class="n">3</span>すべての施設</a></li>
   </ul>
 </nav>
@@ -1478,28 +1478,28 @@
 
 
 
-<!-- 1. カテゴリー別 -->
-<section class="block" id="category" style="--c:var(--pink)">
-  <div class="block-head">
-    <span class="block-en">GATE 02 · CATEGORY</span>
-    <h2 class="block-title"><mark>やりたいこと</mark>で選ぶ</h2>
-    <p class="block-lead">カラオケ・サウナ・BBQなど、お部屋のお楽しみ別にご紹介</p>
-  </div>
-  <div id="categoryShelves">
-    <div class="loading"><div class="bubbles"><span></span><span></span><span></span></div>読み込み中です…</div>
-  </div>
-</section>
-
 <!-- 2. 会場別 -->
 <section class="block" id="venue" style="--c:var(--purple)">
   <div class="block-head">
-    <span class="block-en">GATE 03 · EVENT VENUE</span>
+    <span class="block-en">GATE 02 · EVENT VENUE</span>
     <h2 class="block-title"><mark>行きたい会場</mark>から選ぶ</h2>
     <p class="block-lead">ライブ・イベントの会場を選ぶと、アクセスしやすい施設が表示されます</p>
   </div>
   <div class="route-map-wrap" id="routeMap"></div>
   <div class="venue-tabs" id="venueTabs" role="tablist"></div>
   <div class="venue-panel" id="venuePanel"></div>
+</section>
+
+<!-- 1. カテゴリー別 -->
+<section class="block" id="category" style="--c:var(--pink)">
+  <div class="block-head">
+    <span class="block-en">GATE 03 · CATEGORY</span>
+    <h2 class="block-title"><mark>やりたいこと</mark>で選ぶ</h2>
+    <p class="block-lead">カラオケ・サウナ・BBQなど、お部屋のお楽しみ別にご紹介</p>
+  </div>
+  <div id="categoryShelves">
+    <div class="loading"><div class="bubbles"><span></span><span></span><span></span></div>読み込み中です…</div>
+  </div>
 </section>
 
 <!-- 3. すべての施設（従来の検索・絞り込み） -->
@@ -1586,7 +1586,10 @@ const VENUE_BY_AREA = {
   "中津":             ["梅田芸術劇場", "フェスティバルホール"],
   "新大阪エリア":     ["梅田芸術劇場", "フェスティバルホール"],
   "西中島南方":       ["梅田芸術劇場", "フェスティバルホール"],
-  "鶴橋":             ["大阪城ホール", "京セラドーム大阪"]
+  "鶴橋":             ["大阪城ホール", "京セラドーム大阪"],
+  "日本橋":           ["京セラドーム大阪", "エディオンアリーナ大阪", "Zepp Namba", "なんばHatch"],
+  "USJ":              ["Zepp大阪ベイサイド", "京セラドーム大阪"],
+  "西九条":           ["Zepp大阪ベイサイド", "京セラドーム大阪"]
 };
 
 // 「やりたいことで選ぶ」の見出し（コンセプト・タイプ名ごとに一言と色を設定。未設定の名前も自動で表示されます）
@@ -1660,9 +1663,10 @@ const COLS = {
   order: "表示順",
   venue: "最寄り会場",   // 任意列（なくても動きます）
   access: "会場アクセス", // 任意列：会場ごとの行き方（書き方はファイル冒頭の説明を参照）
-  popular: "人気スコア"   // 任意列：数字が大きいほど人気（GA4の予約クリック数などを入れる）
+  popular: "人気スコア",  // 任意列：数字が大きいほど人気（GA4の予約クリック数などを入れる）
+  publish: "掲載"        // 任意列：「非表示」「×」「なし」「FALSE」と入れた施設はページに出さない
 };
-const OPTIONAL_COLS = ["venue", "access", "popular"];
+const OPTIONAL_COLS = ["venue", "access", "popular", "publish"];
 
 // 「会場アクセス」列の書き方（1つのセルに会場ごとに改行 or「;」で区切る）
 //   京セラドーム大阪=電車14分（乗換なし）
@@ -1775,14 +1779,15 @@ async function loadData(){
       booking: normalize(r[COLS.booking]),
       trip: normalize(r[COLS.trip]),
       agoda: normalize(r[COLS.agoda]),
-      order: parseFloat(r[COLS.order]) || 9999
+      order: parseFloat(r[COLS.order]) || 9999,
+      hidden: /^(非表示|×|✕|x|なし|false|0|no)$/i.test(normalize(r[COLS.publish]))
     }))
     .map(r => ({
       ...r,
       area: r.areaTags[0] || "", // カード表示用の代表エリア（1つ目の値）
       venues: [...new Set([...(r.venueTags.length ? r.venueTags : venuesFromArea(r.areaTags)), ...Object.keys(r.access)])]
     }))
-    .filter(r => r.name)
+    .filter(r => r.name && !r.hidden)
     .sort((a,b) => a.order - b.order);
 
   if(allRows.length === 0){
@@ -2269,7 +2274,7 @@ const MAP_IMAGE_STATIONS = {
   "梅田":       { x:50.2, y:34.0, dir:"l" },
   "本町":       { x:50.2, y:51.3, dir:"l" },
   "心斎橋":     { x:50.2, y:56.0, dir:"l" },
-  "なんば":     { x:50.2, y:74.3, dir:"l" },
+  "なんば":     { x:50.2, y:74.3, dir:"l", group:"なんば・日本橋" },
   "新今宮":     { x:50.2, y:82.2, dir:"r", group:"新今宮・動物園前" },
   "動物園前":   { x:50.2, y:82.2, dir:"r", group:"新今宮・動物園前" },
   "天王寺":     { x:61.2, y:77.6 },
@@ -2278,12 +2283,15 @@ const MAP_IMAGE_STATIONS = {
   "大正":       { x:34.0, y:67.0, dir:"r" },
   "弁天町":     { x:37.6, y:74.0 },
   "西九条":     { x:31.8, y:53.1 },
-  "京橋":       { x:83.9, y:60.0 }
+  "京橋":       { x:83.9, y:60.0 },
+  "日本橋":     { x:50.2, y:74.3, dir:"l", group:"なんば・日本橋" },
+  "ユニバーサルシティ": { x:25.5, y:39.3, dir:"u" }
 };
 // 施設の「エリア」列の値 → 画像上の駅
 const MAP_STATION_BY_AREA = {
   "西中島南方":"西中島南方", "新大阪エリア":"新大阪", "中津":"中津", "梅田(大阪)エリア":"梅田",
-  "新今宮":"新今宮", "動物園前":"動物園前", "なんばエリア":"なんば", "鶴橋":"鶴橋",
+  "新今宮":"新今宮", "動物園前":"動物園前", "日本橋":"日本橋", "なんばエリア":"なんば", "鶴橋":"鶴橋",
+  "USJ":"ユニバーサルシティ", "西九条":"西九条",
   "大正":"大正", "京橋":"京橋", "天王寺":"天王寺"
 };
 function facilityStation(r){
