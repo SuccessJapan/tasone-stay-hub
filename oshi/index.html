@@ -1,15 +1,90 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<!-- Google tag (gtag.js) -->
+<!-- ===== Google アナリティクス 4（GA4）ここから =====
+     測定IDを変えるときは、下の2か所（gtag/js?id= と GA_MEASUREMENT_ID）を同じ値に書き換えてください -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-21WXTDR66F"></script>
 <script>
+  window.GA_MEASUREMENT_ID = "G-21WXTDR66F";
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
   gtag('js', new Date());
-
-  gtag('config', 'G-21WXTDR66F');
+  gtag('config', window.GA_MEASUREMENT_ID); // page_view は自動送信（UTMもこの時点で取得されます）
 </script>
+<script>
+/* GA4 カスタムイベント（ota_click / facility_click / scroll_depth）。全ページ共通 */
+(function(){
+  // 施設名 → 施設コード（例：「Tasone Stay OSAKA SNN1」→「SNN1」、「… SAUNA in UMEDA NAK1F」→「NAK1F」）
+  function facilityCode(name){
+    var s = String(name || "").trim();
+    var m = s.match(/([A-Z]{2,}\d+[A-Z]?)\s*$/);
+    return m ? m[1] : s;
+  }
+  window.gaFacilityCode = facilityCode;
+
+  // 遷移先ドメイン → OTA名
+  var OTA_RULES = [
+    [/(^|\.)airbnb\./, "Airbnb"],
+    [/(^|\.)booking\.com$/, "Booking.com"],
+    [/(^|\.)trip\.com$/, "Trip.com"],
+    [/(^|\.)agoda\.(com|jp)$/, "Agoda"],
+    [/(^|\.)expedia\./, "Expedia"],
+    [/(^|\.)hotels\.com$/, "Hotels.com"],
+    [/(^|\.)travel\.rakuten\.co\.jp$/, "楽天トラベル"],
+    [/(^|\.)jalan\.net$/, "じゃらん"],
+    [/(^|\.)vrbo\.com$/, "Vrbo"]
+  ];
+  function otaName(host){
+    host = String(host || "").toLowerCase();
+    for (var i = 0; i < OTA_RULES.length; i++) { if (OTA_RULES[i][0].test(host)) return OTA_RULES[i][1]; }
+    return host.replace(/^www\./, "");   // 自社予約サイトなどはドメイン名のまま送る
+  }
+
+  // 外部リンクのクリック → ota_click
+  document.addEventListener("click", function(e){
+    var a = e.target && e.target.closest ? e.target.closest("a[href]") : null;
+    if (!a || typeof gtag !== "function") return;
+    var url;
+    try { url = new URL(a.getAttribute("href"), location.href); } catch(err) { return; }
+    if (!/^https?:$/.test(url.protocol) || url.host === location.host) return; // ページ内・同じサイト内は対象外
+    var holder = a.hasAttribute("data-facility") ? a : a.closest("[data-facility]");
+    var facility = holder ? holder.getAttribute("data-facility") : "";
+    gtag("event", "ota_click", {
+      facility: facility || "(none)",
+      ota: otaName(url.hostname),
+      link_url: (url.origin + url.pathname).slice(0, 100)   // GA4のパラメータ上限（100文字）に合わせて?以降は省略
+    });
+  }, true);
+
+  // 施設カードを開いたとき → facility_click（各ページの「施設を開く」処理から呼ぶ）
+  window.gaFacilityClick = function(name){
+    if (typeof gtag !== "function") return;
+    gtag("event", "facility_click", { facility: facilityCode(name), facility_name: String(name || "").slice(0, 100) });
+  };
+
+  // スクロール深度 25 / 50 / 75 / 90% → scroll_depth（各1回）
+  var MARKS = [25, 50, 75, 90], sent = {}, ticking = false;
+  function checkScroll(){
+    ticking = false;
+    var doc = document.documentElement;
+    var total = Math.max(doc.scrollHeight, document.body ? document.body.scrollHeight : 0);
+    if (total <= window.innerHeight) return;
+    var pct = (window.scrollY + window.innerHeight) / total * 100;
+    for (var i = 0; i < MARKS.length; i++) {
+      var p = MARKS[i];
+      if (pct >= p && !sent[p]) {
+        sent[p] = true;
+        if (typeof gtag === "function") gtag("event", "scroll_depth", { percent: p });
+      }
+    }
+  }
+  window.addEventListener("scroll", function(){
+    if (!ticking) { ticking = true; requestAnimationFrame(checkScroll); }
+  }, { passive: true });
+})();
+</script>
+<!-- ===== GA4 ここまで ===== -->
+
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>宿泊施設一覧｜ご予約はこちら</title>
@@ -1851,7 +1926,7 @@ function tagsHtml(r){
 
 function miniCard(r){
   const idx = allRows.indexOf(r);
-  return `<button type="button" class="mini" onclick="openSheet(${idx})">
+  return `<button type="button" class="mini" data-facility="${escapeHtml(gaFacilityCode(r.name))}" onclick="openSheet(${idx})">
       ${photoHtml(r, false)}
       <div class="mini-body">
         <p class="mini-name">${escapeHtml(r.name)}</p>
@@ -2087,7 +2162,7 @@ function venueCard(r, venue, rank, isBest){
   const accessHtml = a
     ? `<div class="access-row">${TRAIN_SVG}<span>${escapeHtml(venue)}まで ${accessText(a)}</span></div>${accessBadges(a, isBest)}`
     : `<div class="access-row none">${TRAIN_SVG}<span>所要時間は準備中</span></div>`;
-  return `<button type="button" class="mini vcard" onclick="openSheet(${idx})">
+  return `<button type="button" class="mini vcard" data-facility="${escapeHtml(gaFacilityCode(r.name))}" onclick="openSheet(${idx})">
       <div style="position:relative">${photoHtml(r, false)}${rankHtml}</div>
       <div class="mini-body">
         <p class="mini-name">${escapeHtml(r.name)}</p>
@@ -2559,7 +2634,7 @@ function render(){
   list.innerHTML = filtered.map((r, i) => {
     const idx = allRows.indexOf(r);
     return `
-      <div class="card" style="animation-delay:${Math.min(i, 8) * 40}ms" onclick="openSheet(${idx})">
+      <div class="card" data-facility="${escapeHtml(gaFacilityCode(r.name))}" style="animation-delay:${Math.min(i, 8) * 40}ms" onclick="openSheet(${idx})">
         ${photoHtml(r, true)}
         <div class="card-head">
           <div class="card-info">
@@ -2585,12 +2660,13 @@ function openSheet(idx){
   if(!r) return;
   const buttons = OTA_LABELS
     .filter(o => r[o.key])
-    .map(o => `<a class="book-btn ${o.cls}" href="${escapeHtml(r[o.key])}" target="_blank" rel="noopener" data-track-ota="${escapeHtml(o.label)}" data-track-property="${escapeHtml(r.name)}">${o.key === "direct" ? "" : '<span class="dot"></span>'}<span class="lbl">${o.label}</span><span class="arrow">›</span></a>`)
+    .map(o => `<a class="book-btn ${o.cls}" href="${escapeHtml(r[o.key])}" target="_blank" rel="noopener" data-track-ota="${escapeHtml(o.label)}" data-track-property="${escapeHtml(r.name)}" data-facility="${escapeHtml(gaFacilityCode(r.name))}">${o.key === "direct" ? "" : '<span class="dot"></span>'}<span class="lbl">${o.label}</span><span class="arrow">›</span></a>`)
     .join("");
   const venues = r.venues.length
     ? `<div class="sheet-venues"><b>アクセスしやすい会場</b><ul class="sheet-access">${r.venues.map(v => `<li><div class="row1"><b>${escapeHtml(v)}</b><span>${r.access[v] ? escapeHtml(r.access[v].text) : ""}</span></div>${routeStepsHtml(r, v)}</li>`).join("")}</ul><p class="route-note">※参考ルートは駅のつながりから自動で表示しています。</p></div>` : "";
 
   const sheet = document.getElementById("sheet");
+  sheet.setAttribute("data-facility", gaFacilityCode(r.name));
   sheet.innerHTML = `
     <div style="position:relative">
       ${photoHtml(r, true)}
@@ -2615,6 +2691,7 @@ function openSheet(idx){
   if(typeof gtag === "function"){
     gtag('event', 'view_property', { property_name: r.name });
   }
+  if(window.gaFacilityClick) gaFacilityClick(r.name);
 }
 function closeSheet(){
   const bd = document.getElementById("sheetBackdrop");
