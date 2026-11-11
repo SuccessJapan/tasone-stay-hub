@@ -2060,9 +2060,16 @@ function renderHero(){
   const wrap = document.getElementById("heroSlides");
   const dots = document.getElementById("heroDots");
   if(imgs.length === 0){ wrap.innerHTML = ""; dots.innerHTML = ""; return; }
-  wrap.innerHTML = imgs.map((u, i) =>
-    i === 0 ? `<div class="hero-slide on" style="background-image:${escapeHtml(cssUrl(u))}"></div>`
-            : `<div class="hero-slide" data-hero="${escapeHtml(u)}"></div>`).join("");
+  // 1枚目が同じ写真なら作り直さない（表示済みの写真をちらつかせない）
+  const first = wrap.firstElementChild;
+  const rest = imgs.slice(1).map(u => `<div class="hero-slide" data-hero="${escapeHtml(u)}"></div>`).join("");
+  if(first && first.dataset.u === imgs[0]){
+    while(first.nextSibling) wrap.removeChild(first.nextSibling);
+    first.classList.add("on");
+    wrap.insertAdjacentHTML("beforeend", rest);
+  }else{
+    wrap.innerHTML = `<div class="hero-slide on" data-u="${escapeHtml(imgs[0])}" style="background-image:${escapeHtml(cssUrl(imgs[0]))}"></div>` + rest;
+  }
   dots.innerHTML = imgs.length > 1
     ? imgs.map((_, i) => `<button type="button" class="${i===0?"on":""}" aria-label="${i+1}枚目の写真" data-i="${i}"></button>`).join("")
     : "";
@@ -2536,7 +2543,7 @@ function renderRouteMap(){
     </div>
     <div class="rmi-view" id="rmiView" style="aspect-ratio:${(1 / MAP_ASPECT).toFixed(4)}">
       <div class="rmi-inner" id="rmiInner">
-        <img src="${escapeHtml(ROUTE_MAP_IMAGE)}" alt="大阪推し活イベント会場マップ（路線図と主な会場）" width="1800" height="1005" loading="lazy" decoding="async" draggable="false">
+        <img alt="大阪推し活イベント会場マップ（路線図と主な会場）" width="1800" height="1005" decoding="async" draggable="false" data-mapsrc="${escapeHtml(ROUTE_MAP_IMAGE)}">
         ${hotspots}
         ${pins}
       </div>
@@ -2551,6 +2558,14 @@ function renderRouteMap(){
     <p class="rm-note">会場のイラストをタップすると、下にその会場へアクセスのよい施設が表示されます。おうちマークは施設のある駅（数字は施設数）です。<br>※路線図はイメージです。実際の所要時間・運行状況は各交通機関でご確認ください。</p>`;
 
   setupMapZoom(wrap);
+  const mimg = wrap.querySelector("img[data-mapsrc]");
+  if(mimg){
+    if(window.__mapLoaded || !("IntersectionObserver" in window)){ mimg.src = mimg.dataset.mapsrc; }
+    else{
+      const io = new IntersectionObserver((ents) => { if(ents.some(e => e.isIntersecting)){ io.disconnect(); window.__mapLoaded = true; mimg.src = mimg.dataset.mapsrc; } }, { rootMargin: "300px 0px" });
+      io.observe(mimg);
+    }
+  }
 
   wrap.querySelectorAll(".rmi-venue").forEach(b => b.addEventListener("click", () => {
     activeVenue = b.dataset.venue;
