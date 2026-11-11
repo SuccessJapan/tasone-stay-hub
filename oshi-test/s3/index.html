@@ -93,6 +93,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://a0.muscache.com">
+<link rel="preload" as="image" href="https://a0.muscache.com/im/pictures/hosting/Hosting-U3RheVN1cHBseUxpc3Rpbmc6MTUxMjAxNDM3Nzc3MjM4OTg3MQ==/original/dbf05a68-845a-43fa-93ab-e7684ea3e72b.jpeg?im_w=960" fetchpriority="high">
 <link rel="preconnect" href="https://docs.google.com">
 <script>
 /* 通信が遅い・データセーバー時は「ライト表示」（写真小さめ・動きなし・スライド1枚） */
@@ -1708,6 +1709,8 @@ const CATEGORY_META = {
 //   空のままなら、スプレッドシートの「画像URL」を表示順に自動で使います
 //   差し替えたい場合は "https://〜.jpg" のように写真のURLを並べてください
 const HERO_IMAGES = [];
+// データが届く前に最初に出すトップ写真（スプレッドシートの1行目の写真と同じにしておくと切り替わりが自然です）
+const HERO_FIRST_IMAGE = "https://a0.muscache.com/im/pictures/hosting/Hosting-U3RheVN1cHBseUxpc3Rpbmc6MTUxMjAxNDM3Nzc3MjM4OTg3MQ==/original/dbf05a68-845a-43fa-93ab-e7684ea3e72b.jpeg?im_w=960";
 const HERO_INTERVAL_MS = 5000; // 写真が切り替わる間隔（ミリ秒）
 
 // 推し活シーン（チケット風カード）。image を空にすると施設写真を自動で使います
@@ -1944,6 +1947,7 @@ async function applyCsv(text, source){
 
   __lastCsv = text;
   renderHero();
+  await new Promise(r => requestAnimationFrame(() => setTimeout(r, 0)));   // 先に画面を描かせてから重い描画
   renderScenes();
   renderCategories();
   renderVenueTabs();
@@ -2055,7 +2059,8 @@ function cssUrl(u){ return "url('" + String(u).replace(/'/g, "%27") + "')"; }
 
 let heroTimer = null;
 function renderHero(){
-  const imgs = (HERO_IMAGES.length ? HERO_IMAGES : sheetImages()).slice(0, window.HUB_LITE ? 1 : 3).map(u => imgW(u, window.HUB_LITE ? 720 : 960));
+  const src = HERO_IMAGES.length ? HERO_IMAGES : (allRows.length ? sheetImages() : (HERO_FIRST_IMAGE ? [HERO_FIRST_IMAGE] : []));
+  const imgs = src.slice(0, window.HUB_LITE ? 1 : 3).map(u => imgW(u, 960));
   const wrap = document.getElementById("heroSlides");
   const dots = document.getElementById("heroDots");
   if(imgs.length === 0){ wrap.innerHTML = ""; dots.innerHTML = ""; return; }
@@ -2902,6 +2907,7 @@ function applyOshi(key, track){
   document.addEventListener("click", () => toggle(false));
 })();
 
+renderHero();   // データを待たずにトップ写真を表示
 loadData();
 </script>
 </body>
