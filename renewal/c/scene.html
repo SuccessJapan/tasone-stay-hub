@@ -1699,6 +1699,10 @@
   .rn-on .block-lead .rn-ph{display:inline-block;}
   .rn-oneline{white-space:nowrap !important;overflow:hidden;text-overflow:clip;letter-spacing:0 !important;max-width:100%;}
 
+/* C案「すべての施設を見る」：施設写真3枚を並べたコラージュ */
+.rn-entry .bg.rn-collage{display:grid;grid-template-columns:repeat(3,1fr);gap:2px;background:#2a2452}
+.rn-entry .bg.rn-collage i{display:block;background-size:cover;background-position:center}
+
 </style>
 </head>
 <body>
@@ -3109,7 +3113,7 @@ loadData();
   const ICON = {
     home: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3 2 11h3v9h5v-6h4v6h5v-9h3z"/></svg>',
     venue: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a7 7 0 0 0-7 7c0 5.2 7 13 7 13s7-7.8 7-13a7 7 0 0 0-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"/></svg>',
-    category: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/><path d="M19 11a7 7 0 0 1-14 0" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><path d="M12 18v3" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>',
+    category: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 21l4.5-12 7.5 7.5z"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M13 4.5c.6 1.6-.4 2.6-1.4 3M19.5 11c-1.6-.6-2.6.4-3 1.4M15 8.5l4-4"/><circle cx="17.5" cy="3" r="1.2"/><circle cx="21" cy="7" r="1.2"/><circle cx="10" cy="3.5" r="1"/></svg>',
     all: '<svg viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="8" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/><rect x="13" y="13" width="8" height="8" rx="2"/></svg>',
     scene: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.5l2.9 6.1 6.6.8-4.9 4.5 1.3 6.6L12 17.2l-5.9 3.3 1.3-6.6-4.9-4.5 6.6-.8z"/></svg>'
   };
@@ -3329,14 +3333,25 @@ loadData();
     document.addEventListener("hub:rendered", () => {
       const cnt = { venue: venueList().length + "会場", all: allRows.length + "件", category: document.querySelectorAll("#categoryShelves .shelf").length + "ジャンル", scene: SCENES.length + "シーン" };
       document.querySelectorAll("[data-cnt]").forEach(el => el.textContent = cnt[el.dataset.cnt] || "");
-      // 入口の背景写真：会場＝地図、それ以外＝施設写真
-      const imgs = allRows.map(r => r.image).filter(Boolean);
-      const karaoke = allRows.find(r => r.image && r.conceptTags.some(t => /カラオケ|サウナ/.test(t)));
-      const bg = { venue: ROUTE_MAP_IMAGE, category: karaoke ? karaoke.image : imgs.at(1), scene: imgs.at(2), all: imgs.at(3) };
+      // 入口の背景写真：会場＝地図、やりたいこと＝カラオケ（DOS1）、すべて＝施設写真3枚のコラージュ
+      const withImg = allRows.filter(r => r.image);
+      const dos1 = withImg.find(r => String(gaFacilityCode(r.name)).toUpperCase() === "DOS1");
+      const karaoke = dos1 || withImg.find(r => r.conceptTags.some(t => /カラオケ/.test(t)));
+      const catImg = karaoke ? karaoke.image : (withImg[1] || {}).image;
+      const sceneImg = (withImg.find(r => r.image !== catImg) || {}).image;
+      const bg = { venue: ROUTE_MAP_IMAGE, category: catImg, scene: sceneImg };
       box.querySelectorAll("[data-entry]").forEach(a => {
         const u = bg[a.dataset.entry];
         if(u) a.querySelector(".bg").style.backgroundImage = cssUrl(a.dataset.entry === "venue" ? u : imgW(u, 720));
       });
+      const used = new Set([catImg, sceneImg]);
+      const pics = [...withImg].sort((a, b) => (b.score - a.score) || (a.order - b.order))
+        .map(r => r.image).filter(u => !used.has(u) && (used.add(u), true)).slice(0, 3);
+      const allBg = box.querySelector('[data-entry="all"] .bg');
+      if(allBg && pics.length){
+        allBg.classList.add("rn-collage");
+        allBg.innerHTML = pics.map(u => `<i style="background-image:${cssUrl(imgW(u, 480))}"></i>`).join("");
+      }
     });
   }else if(L.variant === "B" && page === "home"){
     buildPick(document.querySelector(".rn-topbar") || hero);
