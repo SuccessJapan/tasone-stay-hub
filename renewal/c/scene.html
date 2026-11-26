@@ -1656,6 +1656,48 @@
   .rn-topbar .rn-oshi svg{width:20px;height:20px;color:var(--pink);}
   .rn-oshi-bottom .oshi-panel{bottom:calc(92px + env(safe-area-inset-bottom)) !important;}
   .rn-oshi-top .oshi-panel{top:74px !important;bottom:auto !important;}
+  /* ===== 11/26 フィードバック2：予約サイトへ直接・おすすめ・入口を目立たせる ===== */
+  .rn-fcard{cursor:default;}
+  .rn-fhead{display:block;width:100%;padding:0;border:0;background:none;color:inherit;font:inherit;text-align:left;cursor:pointer;}
+  .rn-fhead .more{display:inline-block;font-size:12.5px;font-weight:700;color:var(--sky);}
+  .rn-fota{padding:4px 14px 14px;display:grid;gap:8px;}
+  .rn-fota p{margin:0;font-size:12px;color:var(--ink-soft);}
+  .rn-fota .book-btn{min-height:48px;}
+  .rn-pop h3{display:flex;align-items:baseline;gap:8px;}
+  .rn-pop h3 span{font-family:"Space Mono",monospace;font-size:10.5px;letter-spacing:.14em;color:var(--sky);font-weight:700;}
+  /* C案の入口：写真付きの大きなボタン */
+  .rn-entry-grid{grid-template-columns:1fr 1fr !important;gap:10px !important;}
+  .rn-entry{min-height:150px !important;padding:0 !important;border:0 !important;border-radius:20px !important;justify-content:flex-end;
+    box-shadow:0 10px 24px -12px rgba(0,0,0,.8);isolation:isolate;}
+  .rn-entry.wide{grid-column:1 / -1;min-height:128px !important;}
+  .rn-entry::before,.rn-entry::after{display:none !important;}
+  .rn-entry .bg{position:absolute;inset:0;z-index:-2;background:#2a2350 center/cover no-repeat;transition:transform .4s ease;}
+  .rn-entry:active .bg{transform:scale(1.04);}
+  .rn-entry .shade{position:absolute;inset:0;z-index:-1;background:linear-gradient(180deg,rgba(20,17,42,.05) 0%,rgba(20,17,42,.55) 45%,rgba(20,17,42,.92) 100%);}
+  .rn-entry[data-entry="venue"] .bg{background-color:#f3eefc;background-size:cover;background-position:center 40%;}
+  .rn-entry[data-entry="venue"] .shade{background:linear-gradient(90deg,rgba(20,17,42,.92) 0%,rgba(20,17,42,.7) 55%,rgba(20,17,42,.15) 100%);}
+  .rn-entry[data-entry="all"] .shade{background:linear-gradient(90deg,var(--pink) 0%,color-mix(in srgb,var(--pink) 70%,transparent) 55%,rgba(20,17,42,.2) 100%);}
+  .rn-entry .tx{position:relative;display:flex;flex-direction:column;gap:3px;padding:14px 40px 14px 14px;}
+  .rn-entry .ic{width:30px !important;height:30px !important;border-radius:10px !important;background:var(--pink) !important;color:#fff !important;box-shadow:none !important;margin-bottom:4px;}
+  .rn-entry[data-entry="all"] .ic{background:#fff !important;color:var(--pink) !important;}
+  .rn-entry b{color:#fff;font-size:16.5px !important;text-shadow:0 2px 8px rgba(0,0,0,.6);}
+  .rn-entry small{color:#f1ecff !important;font-size:11.5px !important;text-shadow:0 1px 6px rgba(0,0,0,.7);}
+  .rn-entry .cnt{top:10px !important;right:10px !important;background:rgba(20,17,42,.75);color:#fff !important;border-radius:999px;padding:3px 9px;font-size:11px !important;}
+  .rn-entry .arr{position:absolute;right:12px;bottom:14px;width:28px;height:28px;border-radius:50%;background:#fff;color:#14112a;display:grid;place-items:center;font-weight:900;font-size:18px;line-height:1;}
+  .rn-fota .book-btn{background:#fff !important;border:0 !important;border-radius:14px !important;padding:10px 12px !important;box-shadow:none !important;}
+  .rn-fota .book-btn .lbl{font-family:"Hiragino Sans","Noto Sans JP",sans-serif !important;font-size:14.5px !important;font-weight:800 !important;letter-spacing:0 !important;color:#14112a !important;}
+  .rn-fota .book-btn .dot{width:12px !important;height:12px !important;background:var(--ota, var(--pink)) !important;}
+  .rn-fota .book-btn .arrow{background:var(--ota, var(--pink)) !important;color:#fff !important;}
+  .rn-fota .book-btn.direct{background:var(--pink) !important;}
+  .rn-fota .book-btn.direct .lbl{color:#fff !important;}
+  .rn-feat-on .rn-fcard .ph{aspect-ratio:16/7 !important;}
+  /* 下メニューの5つを同じ幅で中央にそろえる */
+  .rn-tabbar{display:grid !important;grid-template-columns:repeat(5,1fr);gap:4px !important;padding-left:6px !important;padding-right:6px !important;}
+  .rn-tabbar a,.rn-tabbar .rn-oshi{flex:none !important;width:auto;min-width:0;max-width:none;align-items:center;justify-content:center;text-align:center;padding:4px 0 !important;}
+  .rn-tabbar a span{display:block;width:100%;text-align:center;white-space:nowrap;font-size:11px;letter-spacing:-.02em;}
+  /* 見出し下の説明文は「、」の位置で改行する */
+  .rn-on .block-lead .rn-ph{display:inline-block;}
+  .rn-oneline{white-space:nowrap !important;overflow:hidden;text-overflow:clip;letter-spacing:0 !important;max-width:100%;}
 
 </style>
 </head>
@@ -1901,12 +1943,20 @@ const OPTIONAL_COLS = ["venue", "access", "popular", "publish"];
 //   大阪城ホール=電車22分（乗換1回）
 //   なんばHatch=徒歩10分
 // 「〇分」の数字で近い順に並び、「乗換なし」「徒歩」などの言葉でバッジが付きます
+// 会場名の表記ゆれをそろえる：設定（VENUES）の会場名と前方一致・部分一致すればその名前にする
+function canonVenue(name){
+  const n = String(name || "").replace(/\s+/g, "");
+  if(!n) return name;
+  const hit = VENUES.find(v => v.name.replace(/\s+/g, "") === n)
+    || VENUES.find(v => { const k = v.name.replace(/\s+/g, ""); return n.length >= 3 && (k.startsWith(n) || n.startsWith(k)); });
+  return hit ? hit.name : name;
+}
 function parseAccess(str){
   const out = {};
   normalize(str).split(/[;；\n]/).map(x => x.trim()).filter(Boolean).forEach(line => {
     const m = line.match(/^(.+?)\s*[=＝:：]\s*(.+)$/);
     if(!m) return;
-    const venue = m[1].trim(), text = m[2].trim();
+    const venue = canonVenue(m[1].trim()), text = m[2].trim();
     const mm = text.match(/(\d+)\s*分/);
     out[venue] = { text, min: mm ? parseInt(mm[1], 10) : null };
   });
@@ -2035,7 +2085,7 @@ async function applyCsv(text, source){
       areaTags: splitTags(r[COLS.area]),
       typeTags: splitTags(r[COLS.type]),
       conceptTags: splitTags(r[COLS.concept]),
-      venueTags: splitTags(r[COLS.venue]),
+      venueTags: splitTags(r[COLS.venue]).map(canonVenue),
       access: parseAccess(r[COLS.access]),
       score: parseFloat(normalize(r[COLS.popular]).replace(/[^\d.]/g, "")) || 0,
       image: normalize(r[COLS.image]),
@@ -3099,6 +3149,29 @@ loadData();
   }
   function track(k){ if(typeof gtag === "function") gtag("event", "menu_view", { view: k, layout: L.variant }); }
 
+  /* 全案共通：見出し下の説明文はスマホでは必ず1行で表示（短い文に＋画面幅に合わせて文字サイズを自動調整） */
+  const LEAD_SHORT = {
+    venue: "会場を選ぶと、行きやすい施設が表示されます",
+    category: "カラオケ・サウナ・BBQなど、お楽しみ別にご紹介"
+  };
+  const leads = [...document.querySelectorAll(".block-lead")];
+  leads.forEach(p => { const sec = p.closest("section"); const t = sec && LEAD_SHORT[sec.id]; if(t) p.textContent = t; });
+  function fitLeads(){
+    const mobile = window.matchMedia("(max-width:600px)").matches;
+    leads.forEach(p => {
+      p.style.fontSize = ""; p.classList.toggle("rn-oneline", mobile);
+      if(!mobile || !p.offsetParent) return;
+      let size = parseFloat(getComputedStyle(p).fontSize) || 13.5;
+      size = Math.min(size, 13.5);
+      p.style.fontSize = size + "px";
+      while(p.scrollWidth > p.clientWidth + 1 && size > 9.5){ size -= 0.5; p.style.fontSize = size + "px"; }
+    });
+  }
+  fitLeads();
+  window.addEventListener("resize", fitLeads);
+  window.addEventListener("hashchange", () => setTimeout(fitLeads, 0));
+  if(document.fonts && document.fonts.ready) document.fonts.ready.then(fitLeads);
+
   /* 全案共通：施設一覧の表示切替（コンパクト2列／大きく） */
   (function(){
     const line = document.getElementById("countLine");
@@ -3135,13 +3208,18 @@ loadData();
       const idx = allRows.indexOf(r), code = gaFacilityCode(r.name);
       const near = allRows.filter(x => x !== r && x.area && x.area === r.area).slice(0, 6);
       const tags = [r.area, ...r.typeTags, ...r.conceptTags].filter(Boolean).slice(0, 5);
+      const otas = OTA_LABELS.filter(o => r[o.key]);
       const html = `<div class="lbl">PICK UP <b>お探しのお部屋</b></div>
-        <button type="button" class="rn-fcard" data-facility="${escapeHtml(code)}" onclick="rnFeaturedOpen(${idx})">
-          <div class="ph" ${r.image ? `style="background-image:${escapeHtml(cssUrl(imgW(r.image, 960)))}"` : ""}></div>
-          <div class="bd"><p class="nm">${escapeHtml(r.name)}</p>
-            <div class="tg">${tags.map(t => `<span>${escapeHtml(t)}</span>`).join("")}</div>
-            <span class="go">空室・料金を見る ›</span></div>
-        </button>
+        <div class="rn-fcard" data-facility="${escapeHtml(code)}">
+          <button type="button" class="rn-fhead" onclick="rnFeaturedOpen(${idx})" aria-label="${escapeHtml(r.name)}の詳しい情報">
+            <div class="ph" ${r.image ? `style="background-image:${escapeHtml(cssUrl(imgW(r.image, 960)))}"` : ""}></div>
+            <div class="bd"><p class="nm">${escapeHtml(r.name)}</p>
+              <div class="tg">${tags.map(t => `<span>${escapeHtml(t)}</span>`).join("")}</div>
+              <span class="more">アクセス・詳しい情報を見る ›</span></div>
+          </button>
+          ${otas.length ? `<div class="rn-fota"><p>空室・料金は各予約サイトで確認できます</p>
+            ${otas.map(o => `<a class="book-btn ${o.cls}" href="${escapeHtml(r[o.key])}" target="_blank" rel="noopener" data-facility="${escapeHtml(code)}">${o.key === "direct" ? "" : '<span class="dot"></span>'}<span class="lbl">${escapeHtml(o.label.replace("で予約", "で空室・料金を見る"))}</span><span class="arrow">›</span></a>`).join("")}</div>` : ""}
+        </div>
         ${near.length ? `<div class="rn-near"><h4>${escapeHtml(r.area)}のほかの施設</h4><div class="row">${near.map(miniCard).join("")}</div></div>` : ""}`;
       if(!featuredEl){
         featuredEl = document.createElement("section");
@@ -3168,11 +3246,13 @@ loadData();
       const v = viewOf(location.hash);
       hero.classList.toggle("rn-hidden", v !== "home");
       const fe = document.querySelector(".rn-featured"); if(fe) fe.classList.toggle("rn-hidden", v !== "home");
+      const pk = document.querySelector(".rn-pop"); if(pk) pk.classList.toggle("rn-hidden", v !== "home");
       SECTIONS.forEach(id => { const el = document.getElementById(id); if(el) el.classList.toggle("rn-hidden", v === "home" ? id !== "scene" : id !== v); });
       bar.querySelectorAll("a").forEach(a => a.classList.toggle("on", a.dataset.k === v));
       if(scroll) window.scrollTo(0, 0);
       track(v);
     }
+    const pickA = buildPick(hero);
     window.addEventListener("hashchange", () => apply(true));
     apply(false);
     return;
@@ -3215,33 +3295,55 @@ loadData();
     sec.parentNode.insertBefore(pageHead(page, "index.html"), sec);
   }
 
-  /* C案のトップ：短いヒーロー＋入口カード＋人気の施設 */
+  /* 全案共通：トップに「おすすめの施設」を横スクロールで直接表示 */
+  function buildPick(after){
+    const pop = document.createElement("section");
+    pop.className = "rn-pop";
+    pop.innerHTML = `<h3><span>RECOMMEND</span>おすすめの施設</h3><div class="row" data-pick></div><a class="more" href="${L.variant === "A" ? "#all" : "all.html"}">すべての施設を見る ›</a>`;
+    after.after(pop);
+    document.addEventListener("hub:rendered", () => {
+      const rows = [...allRows].filter(r => r.image).sort((a, b) => (b.score - a.score) || (a.order - b.order)).slice(0, 8);
+      pop.querySelector("[data-pick]").innerHTML = rows.map(miniCard).join("");
+    });
+    return pop;
+  }
+  const isHome = L.variant === "A" || page === "home";
+
+  /* C案のトップ：短いヒーロー＋写真付きの入口＋おすすめの施設 */
   if(L.variant === "C" && page === "home"){
     root.classList.add("rn-compact-hero");
     const E = [
-      { k: "venue", c: "var(--sky)", t: "行きたい会場から", s: "ライブ会場に行きやすい施設を地図で" },
-      { k: "category", c: "var(--pink)", t: "やりたいことで", s: "カラオケ・サウナ・BBQなど" },
-      { k: "all", c: "var(--mint)", t: "すべての施設", s: "エリア・タイプで絞り込み" },
-      { k: "scene", c: "var(--yellow)", t: "推し活シーン", s: "前乗り・感想戦・生誕祭など" }
+      { k: "venue", wide: true, t: "行きたい会場から探す", s: "京セラドーム・大阪城ホールなど。地図で会場をタップ" },
+      { k: "category", t: "やりたいことで探す", s: "カラオケ・サウナ・BBQ" },
+      { k: "scene", t: "推し活シーンで探す", s: "前乗り・感想戦・生誕祭" },
+      { k: "all", wide: true, t: "すべての施設を見る", s: "エリア・タイプで絞り込み" }
     ];
     const box = document.createElement("section");
     box.className = "rn-entries";
-    box.innerHTML = `<h2>どこから探す？</h2><p class="lead">目的に合わせて入口を選んでください</p><div class="rn-entry-grid">` +
-      E.map(x => `<a class="rn-entry" href="${fileOf(x.k)}" style="--ec:${x.c}"><span class="ic">${ICON[x.k]}</span><b>${x.t}</b><small>${x.s}</small><span class="cnt" data-cnt="${x.k}"></span></a>`).join("") +
+    box.innerHTML = `<h2>どこから探す？</h2><p class="lead">目的に合わせて選んでください</p><div class="rn-entry-grid">` +
+      E.map(x => `<a class="rn-entry${x.wide ? " wide" : ""}" href="${fileOf(x.k)}" data-entry="${x.k}"><span class="bg"></span><span class="shade"></span>
+        <span class="tx"><span class="ic">${ICON[x.k]}</span><b>${x.t}</b><small>${x.s}</small></span><span class="cnt" data-cnt="${x.k}"></span><span class="arr">›</span></a>`).join("") +
       `</div>`;
-    const pop = document.createElement("section");
-    pop.className = "rn-pop";
-    pop.innerHTML = `<h3>人気の施設</h3><div class="row" id="rnPop"></div><a class="more" href="all.html">すべての施設を見る ›</a>`;
-    hero.after(box); box.after(pop);
+    hero.after(box);
+    buildPick(box);
     document.addEventListener("hub:rendered", () => {
-      const rows = [...allRows].sort((a, b) => (b.score - a.score) || (a.order - b.order)).slice(0, 8);
-      document.getElementById("rnPop").innerHTML = rows.map(miniCard).join("");
       const cnt = { venue: venueList().length + "会場", all: allRows.length + "件", category: document.querySelectorAll("#categoryShelves .shelf").length + "ジャンル", scene: SCENES.length + "シーン" };
       document.querySelectorAll("[data-cnt]").forEach(el => el.textContent = cnt[el.dataset.cnt] || "");
+      // 入口の背景写真：会場＝地図、それ以外＝施設写真
+      const imgs = allRows.map(r => r.image).filter(Boolean);
+      const karaoke = allRows.find(r => r.image && r.conceptTags.some(t => /カラオケ|サウナ/.test(t)));
+      const bg = { venue: ROUTE_MAP_IMAGE, category: karaoke ? karaoke.image : imgs.at(1), scene: imgs.at(2), all: imgs.at(3) };
+      box.querySelectorAll("[data-entry]").forEach(a => {
+        const u = bg[a.dataset.entry];
+        if(u) a.querySelector(".bg").style.backgroundImage = cssUrl(a.dataset.entry === "venue" ? u : imgW(u, 720));
+      });
     });
+  }else if(L.variant === "B" && page === "home"){
+    buildPick(document.querySelector(".rn-topbar") || hero);
   }
   track(page);
 })();
+
 
 </script>
 </body>
