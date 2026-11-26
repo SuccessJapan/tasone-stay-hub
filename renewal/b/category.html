@@ -1618,6 +1618,44 @@
   .rn-near .row > *{flex:0 0 46%;max-width:200px;}
   .rn-feat-on .photo-hero{min-height:min(40vh, 340px) !important;}
   .rn-feat-on .rn-fcard .ph{aspect-ratio:16/8;}
+  /* ===== 11/26 フィードバック対応：メニューを目立たせる・スマホで押しやすく ===== */
+  /* 下メニュー（A・C案）：明るい背景＋選択中はピンクで塗る＋文字を大きく */
+  .rn-tabbar{background:#2a2452;border-top:2px solid var(--pink);box-shadow:0 -8px 24px rgba(0,0,0,.45);
+    padding:8px 6px calc(8px + env(safe-area-inset-bottom));gap:6px;}
+  .rn-tabbar a{max-width:none;min-height:54px;justify-content:center;gap:3px;color:#e6e0ff;font-size:12px;font-weight:900;border-radius:16px;}
+  .rn-tabbar a svg{width:26px;height:26px;color:#fff;opacity:.85;}
+  .rn-tabbar a.on{background:var(--pink);color:#fff;box-shadow:0 0 18px -4px var(--pink);}
+  .rn-tabbar a.on svg{color:#fff;opacity:1;filter:none;}
+  .rn-has-tabbar body{padding-bottom:calc(84px + env(safe-area-inset-bottom));}
+  /* 上メニュー（B案）：4つを横幅いっぱいのボタンに */
+  .rn-topbar{background:#2a2452;border-bottom:2px solid var(--pink);box-shadow:0 8px 24px rgba(0,0,0,.4);}
+  .rn-topbar .in{display:grid !important;grid-template-columns:repeat(4,1fr);gap:6px;padding:8px;overflow:visible;}
+  .rn-topbar .brand{display:none !important;}
+  .rn-topbar a{display:flex;align-items:center;justify-content:center;min-height:46px;padding:4px 2px !important;font-size:13px !important;
+    color:#e6e0ff;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.18);border-radius:14px;text-align:center;line-height:1.25;}
+  .rn-topbar a.on{background:var(--pink);border-color:var(--pink);color:#fff;}
+  /* 推しカラーボタンはスマホでは丸いアイコンだけにして、画面をふさがない */
+  @media (max-width:600px){
+    .oshi-fab{width:48px;height:48px;padding:0 !important;justify-content:center;font-size:0 !important;border-radius:50% !important;}
+    .oshi-fab svg{width:22px !important;height:22px !important;}
+    .rn-has-tabbar .oshi-fab{bottom:calc(96px + env(safe-area-inset-bottom)) !important;}
+    .rn-has-tabbar .oshi-panel{bottom:calc(152px + env(safe-area-inset-bottom)) !important;}
+  }
+  /* 下層ページの戻るリンクを押しやすく */
+  .rn-pagehead .crumb{font-size:13px;padding:8px 12px;border:1px solid var(--line);border-radius:999px;}
+  /* 会場タブ・並べ替え・絞り込みチップを指で押しやすい大きさに */
+  .rn-on .venue-tab{min-height:48px;}
+  .rn-on .chip{min-height:38px;padding-left:14px !important;padding-right:14px !important;font-size:13px !important;}
+  .rn-viewtoggle button{min-height:38px;padding:8px 14px;font-size:13px;}
+  /* 推しカラーはメニューの中のボタンに（浮いているボタンが施設カードに重ならないように） */
+  .rn-oshi-in-nav .oshi-fab{display:none !important;}
+  .rn-tabbar .rn-oshi{flex:0 0 58px;}
+  .rn-tabbar .rn-oshi svg{color:var(--pink);opacity:1;}
+  .rn-topbar .in{grid-template-columns:repeat(4,1fr) 50px !important;}
+  .rn-topbar .rn-oshi{flex-direction:column;gap:1px;font-size:10px !important;color:#e6e0ff;}
+  .rn-topbar .rn-oshi svg{width:20px;height:20px;color:var(--pink);}
+  .rn-oshi-bottom .oshi-panel{bottom:calc(92px + env(safe-area-inset-bottom)) !important;}
+  .rn-oshi-top .oshi-panel{top:74px !important;bottom:auto !important;}
 
 </style>
 </head>
@@ -3049,6 +3087,16 @@ loadData();
     h.innerHTML = `<a class="crumb" href="${homeHref}"><b>OSHI STAY OSAKA</b>‹ トップへ</a>`;
     return h;
   }
+  function addOshiButton(nav, top){
+    const fab = document.getElementById("oshiFab");
+    if(!fab || !nav) return;
+    const b = document.createElement("a");
+    b.href = "#"; b.className = "rn-oshi"; b.setAttribute("role", "button"); b.setAttribute("aria-label", "推しカラーを選ぶ");
+    b.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 21s-7.5-4.6-9.8-9.2C.5 8.3 2.6 4 6.6 4c2.2 0 3.7 1.3 5.4 3.2C13.7 5.3 15.2 4 17.4 4c4 0 6.1 4.3 4.4 7.8C19.5 16.4 12 21 12 21z"/></svg><span>推し色</span>';
+    b.addEventListener("click", (e) => { e.preventDefault(); e.stopPropagation(); fab.click(); });
+    (nav.querySelector(".in") || nav).appendChild(b);
+    root.classList.add("rn-oshi-in-nav", top ? "rn-oshi-top" : "rn-oshi-bottom");
+  }
   function track(k){ if(typeof gtag === "function") gtag("event", "menu_view", { view: k, layout: L.variant }); }
 
   /* 全案共通：施設一覧の表示切替（コンパクト2列／大きく） */
@@ -3087,7 +3135,7 @@ loadData();
       const idx = allRows.indexOf(r), code = gaFacilityCode(r.name);
       const near = allRows.filter(x => x !== r && x.area && x.area === r.area).slice(0, 6);
       const tags = [r.area, ...r.typeTags, ...r.conceptTags].filter(Boolean).slice(0, 5);
-      const html = `<div class="lbl">FOR YOU <b>広告でご覧の施設</b></div>
+      const html = `<div class="lbl">PICK UP <b>お探しのお部屋</b></div>
         <button type="button" class="rn-fcard" data-facility="${escapeHtml(code)}" onclick="rnFeaturedOpen(${idx})">
           <div class="ph" ${r.image ? `style="background-image:${escapeHtml(cssUrl(imgW(r.image, 960)))}"` : ""}></div>
           <div class="bd"><p class="nm">${escapeHtml(r.name)}</p>
@@ -3115,6 +3163,7 @@ loadData();
     nav && nav.classList.add("rn-hidden");
     const viewOf = (h) => ({ "#venue": "venue", "#category": "category", "#all": "all" })[h] || "home";
     const bar = tabbar(["home", "venue", "category", "all"], (k) => k === "home" ? "#top" : "#" + k, viewOf(location.hash));
+    addOshiButton(bar, false);
     function apply(scroll){
       const v = viewOf(location.hash);
       hero.classList.toggle("rn-hidden", v !== "home");
@@ -3156,8 +3205,9 @@ loadData();
     bar.innerHTML = `<div class="in"><a class="brand" href="index.html">OSHI STAY</a>` +
       ["home", "venue", "category", "all"].map(k => `<a href="${fileOf(k)}" class="${k === page ? "on" : ""}">${SHORT[k]}</a>`).join("") + `</div>`;
     if(page === "home") hero.after(bar); else document.body.insertBefore(bar, document.body.firstChild);
+    addOshiButton(bar, true);
   }else{
-    tabbar(["home", "venue", "category", "all"], fileOf, page);
+    addOshiButton(tabbar(["home", "venue", "category", "all"], fileOf, page), false);
   }
 
   if(page !== "home"){
